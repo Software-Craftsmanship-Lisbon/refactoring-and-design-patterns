@@ -1,4 +1,4 @@
-﻿namespace RefactoringDemo
+﻿namespace RefactoringDemo.Domain.ECommerce.Orders
 {
     public enum Status
     {

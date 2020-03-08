@@ -3,7 +3,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace RefactoringDemo
+namespace RefactoringDemo.Domain.ECommerce.Orders
 {
     public class OrderItem
     {
@@ -13,7 +13,7 @@ namespace RefactoringDemo
 
         public int Quantity { get; set; }
 
-        public decimal Price { get; set; }
+        public decimal Price => Product.Price;
 
         public decimal Total()
         {

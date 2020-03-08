@@ -3,16 +3,14 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace RefactoringDemo
+namespace RefactoringDemo.Domain.ECommerce.Orders
 {
-    public class Customer
+    public class Product
     {
         public int Id { get; set; }
 
         public string Name { get; set; }
 
-        public DateTime BirthDate { get; set; }
-
-        public string Email { get; set; }
+        public decimal Price { get; set; }
     }
 }

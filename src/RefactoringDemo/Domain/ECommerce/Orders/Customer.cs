@@ -16,5 +16,7 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
         public string Email { get; set; }
 
         public string Nif { get; set; }
+
+        public DateTime? LastPurchaseDate { get; set; }
     }
 }

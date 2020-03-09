@@ -19,7 +19,7 @@ namespace RefactoringDemo
             var command = new CreateOrderCommand
             {
                 CustomerId = Guid.Parse("418be026-b301-4696-b062-08d70cfeca04"),
-                DeliveryFee = 4,
+                DF = 4,
                 Discount = 10,
                 Items = new List<CreateOrderItemCommand>
                 {

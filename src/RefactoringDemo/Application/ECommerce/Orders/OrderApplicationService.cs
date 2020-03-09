@@ -39,45 +39,41 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 throw new ArgumentException("DF should be applied.", nameof(command.DF));
             }
 
-            #region Discount calcs
+            #region Disc calcs
+            
+            decimal? disc = command.Discount;
 
-            decimal disc = command.Discount.Value;
-
-            //Birthday
+            //Birthday - Purchases over 50 €
             if (DateTime.Today.Day == customer.BirthDate.Day)
             {
                 if (DateTime.Today.Month == customer.BirthDate.Month)
                 {
-                    disc -= 10m;
+                    disc += 10m;
                 }
             }
 
             // First purchase
             if (!customer.LastPurchaseDate.HasValue)
             {
-                disc -= 5m;
+                disc += 5m;
             }
             // Last purchase 40 days ago
             else
             {
                 if ((DateTime.Today - customer.LastPurchaseDate.Value).TotalDays > 40)
                 {
-                   disc -= 5m;
+                    disc += 5m;
                 }
             }
-
-            //BlackFriday
-            if (DateTime.Today.Month == 11)
-            {
-                disc -= 20m;
-            }
+            
             //ValentinesDayPt - 14 de fevereiro
-            else if (DateTime.Today.Day == 14 && DateTime.Today.Month == 2)
+            if (DateTime.Today.Day == 14 && DateTime.Today.Month == 2)
             {
-                disc -= 12m;
+                disc += 12m;
             }
 
             #endregion
+
 
             // Create the order.
             var order = new Order
@@ -86,12 +82,7 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 DeliveryFee = command.DF,
                 Discount = command.Discount,
             };
-
-            // Purchases over 100 €
-            if (order.SubTotal() > 100m)
-            {
-                disc -= 15;
-            }
+                        
 
             foreach (var item in command.Items)
             {
@@ -114,6 +105,20 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 }
 
                 order.Items.Add(new OrderItem { Product = product, Quantity = item.Quantity });
+            }
+
+            // ---------- Calculates discounts --------------
+            // Purchases over 100 €
+            if (order.SubTotal() > 100m)
+            {
+                order.Discount += 15;
+            }
+
+            //BlackFriday - Just 30% off!
+            if (DateTime.Today.Month == 11)
+            {
+                decimal _30percOfST = (30m / 100m) * order.SubTotal();
+                order.Discount = _30percOfST;
             }
 
             // Persist the order.

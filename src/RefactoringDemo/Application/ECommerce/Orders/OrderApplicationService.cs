@@ -26,8 +26,6 @@ namespace RefactoringDemo.Application.ECommerce.Orders
         {
             // Get the customer from DB.
             var customer = _customerRepository.Get(command.CustomerId);
-            DateTime? lastPD = customer.LastPurchaseDate;
-            customer.LastPurchaseDate = DateTime.Today;
 
             if (customer == null)
             {
@@ -38,41 +36,6 @@ namespace RefactoringDemo.Application.ECommerce.Orders
             {
                 throw new ArgumentException("DF should be applied.", nameof(command.DF));
             }
-
-            #region Disc calcs
-            
-            decimal? disc = command.Discount;
-
-            //Birthday - Purchases over 50 €
-            if (DateTime.Today.Day == customer.BirthDate.Day)
-            {
-                if (DateTime.Today.Month == customer.BirthDate.Month)
-                {
-                    disc += 10m;
-                }
-            }
-
-            // First purchase
-            if (!customer.LastPurchaseDate.HasValue)
-            {
-                disc += 5m;
-            }
-            // Last purchase 40 days ago
-            else
-            {
-                if ((DateTime.Today - customer.LastPurchaseDate.Value).TotalDays > 40)
-                {
-                    disc += 5m;
-                }
-            }
-            
-            //ValentinesDayPt - 14 de fevereiro
-            if (DateTime.Today.Day == 14 && DateTime.Today.Month == 2)
-            {
-                disc += 12m;
-            }
-
-            #endregion
 
 
             // Create the order.
@@ -107,18 +70,46 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 order.Items.Add(new OrderItem { Product = product, Quantity = item.Quantity });
             }
 
-            // ---------- Calculates discounts --------------
-            // Purchases over 100 €
-            if (order.SubTotal() > 100m)
+            bool da = false; // discount applied
+
+            #region Disc
+
+            // First purchase
+            if (!customer.LastPurchaseDate.HasValue)
             {
-                order.Discount += 15;
+                decimal _10percOfST = (10m / 100m) * order.SubTotal();
+                order.Discount = _10percOfST;
+                da = true;
+            }
+            // Last purchase 40 days ago
+            else
+            {
+                if ((DateTime.Today - customer.LastPurchaseDate.Value).TotalDays > 40)
+                {
+                    decimal _5percOfST = (5m / 100m) * order.SubTotal();
+                    order.Discount = _5percOfST;
+                    da = true;
+                }
             }
 
-            //BlackFriday - Just 30% off!
-            if (DateTime.Today.Month == 11)
+            #endregion
+
+
+            // ---------- Calculates discounts --------------
+
+            if (!da) // discount applied
             {
-                decimal _30percOfST = (30m / 100m) * order.SubTotal();
-                order.Discount = _30percOfST;
+                //Birthday - Purchases over 50 €
+                if (DateTime.Today.Day == customer.BirthDate.Day)
+                {
+                    if (DateTime.Today.Month == customer.BirthDate.Month)
+                    {
+                        if (order.SubTotal() > 50m)
+                        {
+                            order.Discount = 10m;
+                        }
+                    }
+                } 
             }
 
             // Persist the order.
@@ -129,6 +120,10 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                     if (command.DF > 0)
                     {
                         _orderRepository.Save(order);
+                        
+                        DateTime? lastPD = customer.LastPurchaseDate;
+                        customer.LastPurchaseDate = DateTime.Today;
+                        _customerRepository.Save(customer);
                     }
                 }
             }

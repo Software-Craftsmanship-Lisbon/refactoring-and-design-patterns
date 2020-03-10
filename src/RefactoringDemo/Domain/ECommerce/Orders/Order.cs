@@ -23,7 +23,7 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
 
             AddNotifications(new Contract()
                     .Requires()
-                    .IsGreaterThan(DeliveryFee, 0, nameof(DeliveryFee), "Delivery fee must should be positive.")
+                    .IsGreaterThan(DeliveryFee, 0, nameof(DeliveryFee), "Invalid delivery fee.")
                     .IsGreaterOrEqualsThan(Discount, 0, nameof(Discount), "Discount, when applied, should be positive."));
         }
 
@@ -43,7 +43,13 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
 
         public decimal Total() => SubTotal() + DeliveryFee - Discount;
 
-        public void UpdateDiscount(decimal discount) => Discount = discount;
+        public void ApplyFixedDiscount(decimal discount) => Discount = discount;
+
+        public void ApplyPercentDiscount(decimal percent)
+        {
+            decimal amount = (percent / 100m) * SubTotal();
+            ApplyFixedDiscount(amount);
+        }
 
         public void AddItem(OrderItem item)
         {

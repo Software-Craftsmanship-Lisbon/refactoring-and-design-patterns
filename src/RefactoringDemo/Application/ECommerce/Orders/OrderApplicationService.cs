@@ -32,28 +32,10 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 return new CreateOrderCommandResult(Notifications);
             }
 
-            if (command.DF <= 0)
-            {
-                AddNotification(nameof(command.DF), "DF should be applied.");
-            }
-
-            if (command.Discount < 0)
-            {
-                AddNotification(nameof(command.Discount), "Discount should be positive.");
-            }
-
             // Create the order.
-            var order = new Order(customer, command.DF, command.Discount);
+            var order = new Order(customer, command.DeliveryFee, command.Discount);
 
-            foreach (var item in command.Items)
-            {
-                if (item.Quantity <= 0)
-                {
-                    AddNotification(nameof(item.Quantity), "Quantity should be positive.");
-                }
-            }
-
-            // Add the itens into order.
+            // Add the itens into the order.
             foreach (var item in command.Items)
             {
                 // Get the product from DB.
@@ -69,48 +51,17 @@ namespace RefactoringDemo.Application.ECommerce.Orders
 
             if (command.Discount == 0)
             {
-                bool da = false; // discount applied
-
-                #region Disc
-
-                if (customer != null)
+                if (!customer.FirstPurchase)
                 {
-                    // First purchase
-                    if (!customer.LastPurchaseDate.HasValue)
-                    {
-                        decimal _10percOfST = (10m / 100m) * order.SubTotal();
-                        order.UpdateDiscount(_10percOfST);
-                        da = true;
-                    }
-                    // Last purchase 40 days ago
-                    else
-                    {
-                        if ((DateTime.Today - customer.LastPurchaseDate.Value).TotalDays > 40)
-                        {
-                            decimal _5percOfST = (5m / 100m) * order.SubTotal();
-                            order.UpdateDiscount(_5percOfST);
-                            da = true;
-                        }
-                    }
+                    order.ApplyPercentDiscount(10m);
                 }
-
-                #endregion Disc
-
-                // ---------- Calculates discounts --------------
-
-                if (!da)
+                else if (customer.LastPurchaseInDaysAgo(40))
                 {
-                    //Birthday - Purchases over 50 €
-                    if (DateTime.Today.Day == customer?.BirthDate.Day)
-                    {
-                        if (DateTime.Today.Month == customer?.BirthDate.Month)
-                        {
-                            if (order.SubTotal() > 50m)
-                            {
-                                order.UpdateDiscount(10m);
-                            }
-                        }
-                    }
+                    order.ApplyPercentDiscount(5m);
+                }
+                else if (customer.IsBirthDate && order.SubTotal() > 50m)
+                {
+                    order.ApplyFixedDiscount(10m);
                 }
             }
 
@@ -124,11 +75,8 @@ namespace RefactoringDemo.Application.ECommerce.Orders
             {
                 _orderRepository.Save(order);
 
-                if (customer != null)
-                {
-                    customer.UpdateLastPurchaseDate(DateTime.Today);
-                    _customerRepository.Save(customer);
-                }
+                customer.UpdateLastPurchaseDate(DateTime.Today);
+                _customerRepository.Save(customer);
             }
 
             return new CreateOrderCommandResult(

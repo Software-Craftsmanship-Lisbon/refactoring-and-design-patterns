@@ -27,6 +27,10 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
 
         public DateTime? LastPurchaseDate { get; private set; }
 
+        public bool FirstPurchase => LastPurchaseDate.HasValue;
+
+        public bool IsBirthDate => DateTime.Today.Day == BirthDate.Day && DateTime.Today.Month == BirthDate.Month;
+
         public void UpdateLastPurchaseDate(DateTime lastPurchaseDate)
             => LastPurchaseDate = lastPurchaseDate;
 
@@ -39,5 +43,7 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
             Email = email;
             BirthDate = birthDate;
         }
+
+        public bool LastPurchaseInDaysAgo(int days) => (DateTime.Today - LastPurchaseDate.Value).TotalDays > days;
     }
 }

@@ -8,7 +8,7 @@ namespace RefactoringDemo.Application.ECommerce.Orders
     {
         public Guid CustomerId { get; set; }
 
-        public decimal DF { get; set; }
+        public decimal DeliveryFee { get; set; }
 
         public decimal Discount { get; set; }
 

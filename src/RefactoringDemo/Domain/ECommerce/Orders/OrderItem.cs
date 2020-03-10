@@ -12,7 +12,7 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
 
             AddNotifications(new Contract()
                 .Requires()
-                .IsGreaterThan(Quantity, 0, nameof(Quantity), "Quantity should be greater than 0."));
+                .IsGreaterThan(Quantity, 0, nameof(Quantity), "Quantity should be positive."));
         }
 
         public Product Product { get; }

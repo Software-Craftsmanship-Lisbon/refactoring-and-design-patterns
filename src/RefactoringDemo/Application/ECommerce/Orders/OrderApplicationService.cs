@@ -26,34 +26,30 @@ namespace RefactoringDemo.Application.ECommerce.Orders
         {
             // Get the customer from DB.
             var customer = _customerRepository.Get(command.CustomerId);
-
             if (customer == null)
             {
-                AddNotification(nameof(customer), "Product not found.");
+                AddNotification(nameof(customer), "Customer not found.");
+                return new CreateOrderCommandResult(Notifications);
             }
 
             if (command.DF <= 0)
             {
-                throw new ArgumentException("DF should be applied.", nameof(command.DF));
+                AddNotification(nameof(command.DF), "DF should be applied.");
             }
 
-            if (command.Discount > 0)
+            if (command.Discount < 0)
             {
-                if (command.Discount <= 0)
-                {
-                    throw new ArgumentException("Discount should be positive.", nameof(command.Discount));
-                }
+                AddNotification(nameof(command.Discount), "Discount should be positive.");
             }
 
             // Create the order.
             var order = new Order(customer, command.DF, command.Discount);
-            AddNotifications(order.Notifications);
 
             foreach (var item in command.Items)
             {
                 if (item.Quantity <= 0)
                 {
-                    throw new ArgumentException("Quantity should be positive.", nameof(item.Quantity));
+                    AddNotification(nameof(item.Quantity), "Quantity should be positive.");
                 }
             }
 
@@ -62,10 +58,10 @@ namespace RefactoringDemo.Application.ECommerce.Orders
             {
                 // Get the product from DB.
                 var product = _productRepository.Get(item.ProductId);
-
                 if (product == null)
                 {
-                    throw new ArgumentException("Product not found.", nameof(product));
+                    AddNotification(nameof(product), "Product not found.");
+                    return new CreateOrderCommandResult(Notifications);
                 }
 
                 order.AddItem(new OrderItem(product, item.Quantity));
@@ -95,7 +91,7 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                             order.UpdateDiscount(_5percOfST);
                             da = true;
                         }
-                    } 
+                    }
                 }
 
                 #endregion Disc
@@ -118,29 +114,32 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 }
             }
 
-            // Persist the order.
-            if (command.DF > 0)
+            // Add order notifications in AppService
+            AddNotifications(order.Notifications);
+
+            // If valid (no notifications):
+            //  - persist the order.
+            //  - update customer.
+            if (Valid)
             {
                 _orderRepository.Save(order);
 
                 if (customer != null)
                 {
                     customer.UpdateLastPurchaseDate(DateTime.Today);
-                    _customerRepository.Save(customer); 
+                    _customerRepository.Save(customer);
                 }
             }
 
-            var result = new CreateOrderCommandResult(Notifications)
-            {
-                Number = order.Number,
-                CreatedDateTime = order.CreatedDateTime,
-                DeliveryFee = order.DeliveryFee,
-                Discount = order.Discount,
-                SubTotal = order.SubTotal(),
-                Total = order.Total()
-            };
-
-            return result;
+            return new CreateOrderCommandResult(
+                Notifications,
+                order.Number,
+                order.CreatedDateTime,
+                order.DeliveryFee,
+                order.Discount,
+                order.SubTotal(),
+                order.Total()
+            );
         }
     }
 }

@@ -15,7 +15,7 @@ namespace RefactoringDemo.Application.ECommerce.Orders
 
         public IReadOnlyCollection<Notification> Notifications { get; set; }
 
-        public bool Success => !Notifications.Any();
+        public bool Valid => !Notifications.Any();
     }
 
     public class CreateOrderCommandResult : CommandResult
@@ -23,6 +23,24 @@ namespace RefactoringDemo.Application.ECommerce.Orders
         public CreateOrderCommandResult(IReadOnlyCollection<Notification> notifications)
             : base(notifications)
         {
+        }
+
+        public CreateOrderCommandResult(
+            IReadOnlyCollection<Notification> notifications,
+            string number,
+            DateTime createdDateTime,
+            decimal deliveryFee,
+            decimal discount,
+            decimal subTotal,
+            decimal total)
+            : base(notifications)
+        {
+            Number = number;
+            CreatedDateTime = createdDateTime;
+            DeliveryFee = deliveryFee;
+            Discount = discount;
+            SubTotal = subTotal;
+            Total = total;
         }
 
         public string Number { get; set; }
@@ -35,6 +53,6 @@ namespace RefactoringDemo.Application.ECommerce.Orders
 
         public decimal SubTotal { get; set; }
 
-        public decimal Total { get; set; }        
+        public decimal Total { get; set; }
     }
 }

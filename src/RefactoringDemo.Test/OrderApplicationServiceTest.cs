@@ -8,22 +8,15 @@ using Xunit;
 
 namespace RefactoringDemo.Test
 {
-    public class UnitTest1
+    public class OrderApplicationServiceTest
     {
         private ICustomerRepository _customerRepository;
         private IProductRepository _productRepository;
         private IOrderRepository _orderRepository;
 
-        public UnitTest1()
+        public OrderApplicationServiceTest()
         {
             InitializeFake();
-        }
-
-        [Fact]
-        public void Test1()
-        {
-            // I will test when I have enough time.
-            Assert.True(true);
         }
 
         [Fact]
@@ -50,57 +43,60 @@ namespace RefactoringDemo.Test
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
             var result = appService.Handle(command);
 
-            Assert.False(result.Success);
-            Assert.Equal("Product not found.", result.Notifications.First().Message);
+            Assert.False(result.Valid);
+            Assert.Equal("Customer not found.", result.Notifications.First().Message);
         }
 
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public void Handle_CreateOrderCommandDeliveryFeeInvalid_ThrowsArgumentException(decimal deliveryFee)
+        public void Handle_CreateOrderCommandDeliveryFeeInvalid_Invalid(decimal deliveryFee)
         {
             var command = GetCommand();
             command.DF = deliveryFee;
 
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
+            var result = appService.Handle(command);
 
-            var ex = Assert.Throws<ArgumentException>(() => appService.Handle(command));
-            Assert.Equal("DF should be applied. (Parameter 'DF')", ex.Message);
+            Assert.False(result.Valid);
+            Assert.Equal("DF should be applied.", result.Notifications.First().Message);
         }
 
         [Theory]
         [InlineData(0)]
         [InlineData(-1)]
-        public void Handle_CreateOrderCommandQuantityInvalid_ThrowsArgumentException(int quantity)
+        public void Handle_CreateOrderCommandQuantityNegative_Invalid(int quantity)
         {
             var command = GetCommand();
-            command.Items.ToList().First().Quantity = quantity;
+            command.Items.First().Quantity = quantity;
 
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
 
-            var ex = Assert.Throws<ArgumentException>(() => appService.Handle(command));
-            Assert.Equal("Quantity should be positive. (Parameter 'Quantity')", ex.Message);
+            var result = appService.Handle(command);
+            Assert.Equal("Quantity should be positive.", result.Notifications.First().Message);
         }
 
         [Fact]
-        public void Handle_CreateOrderCommandNullProduct_ThrowsArgumentException()
+        public void Handle_CreateOrderCommandNullProduct_Invalid()
         {
             var command = GetCommand();
-            command.Items.ToList().First().ProductId = Guid.Parse("1b63e81b-3cb0-46ca-ab45-80661321817f");
+            command.Items.First().ProductId = Guid.Parse("1b63e81b-3cb0-46ca-ab45-80661321817f");
 
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
-            var ex = Assert.Throws<ArgumentException>(() => appService.Handle(command));
-            Assert.Equal("Product not found. (Parameter 'product')", ex.Message);
+            var result = appService.Handle(command);
+
+            Assert.False(result.Valid);
+            Assert.Equal("Product not found.", result.Notifications.First().Message);
         }
 
         [Fact]
         public void Handle_CreateOrderCommandDiscountInvalid_Invalid()
         {
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
-            var result = (CreateOrderCommandResult)appService.Handle(GetCommand(-1));
+            var result = appService.Handle(GetCommand(discount: -1));
 
-            Assert.False(result.Success);
-            Assert.Equal("Discount, when applied, should be positive.", result.Notifications.First().Message);
+            Assert.False(result.Valid);
+            Assert.Equal("Discount should be positive.", result.Notifications.First().Message);
         }
 
         [Fact]

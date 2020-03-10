@@ -3,8 +3,9 @@ using System.Linq;
 using RefactoringDemo.Application.ECommerce.Orders;
 using Xunit;
 
-namespace RefactoringDemo.Test
+namespace RefactoringDemo.Test.Application
 {
+    [Trait(nameof(OrderApplicationService), nameof(Application))]
     public class OrderApplicationServiceTest : Test
     {
         [Fact]

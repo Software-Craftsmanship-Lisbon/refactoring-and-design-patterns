@@ -3,8 +3,9 @@ using System.Linq;
 using Xunit;
 using RefactoringDemo.Domain.ECommerce.Orders;
 
-namespace RefactoringDemo.Test
+namespace RefactoringDemo.Test.Domain
 {
+    [Trait(nameof(Order), nameof(Domain))]
     public class OrderTest : Test
     {
         [Theory]

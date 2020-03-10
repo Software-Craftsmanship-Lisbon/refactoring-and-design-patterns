@@ -57,9 +57,9 @@ namespace RefactoringDemo.Application.ECommerce.Orders
             {
                 var strategies = new List<DiscountStrategy>
                 {
-                    //new FirstPurchaseStrategy(percentDiscount: 10m),
+                    new FirstPurchaseStrategy(percentDiscount: 10m),
                     new LastPurchaseInDaysAgoStrategy(percentDiscount: 5m, daysAgo: 40),
-                    //new BirthDateStrategy(fixedDiscount: 10m, purchaseOverSubTotal: 50m)
+                    new BirthDateStrategy(fixedDiscount: 10m, purchaseOverSubTotal: 50m)
                 };
 
                 var context = new DiscountContext(strategies);
@@ -70,12 +70,12 @@ namespace RefactoringDemo.Application.ECommerce.Orders
             AddNotifications(order.Notifications);
 
             // If valid (no notifications):
-            //  - persist the order.
-            //  - update customer.
             if (Valid)
             {
+                // Persist the order.
                 _orderRepository.Save(order);
 
+                // Update the customer.
                 customer.UpdateLastPurchaseDate(DateTime.Today);
                 _customerRepository.Save(customer);
             }

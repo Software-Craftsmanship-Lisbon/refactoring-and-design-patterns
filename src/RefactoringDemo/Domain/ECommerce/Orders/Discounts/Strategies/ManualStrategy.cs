@@ -4,7 +4,7 @@
     {
         public override void Calculate(Order order, Customer customer)
         {
-            throw new System.NotImplementedException();
+            
         }
     }
 }

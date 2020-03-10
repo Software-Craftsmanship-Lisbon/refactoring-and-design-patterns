@@ -42,14 +42,16 @@ namespace RefactoringDemo.Test
         }
 
         [Fact]
-        public void Handle_CreateOrderCommandNullCustumer_ThrowsArgumentException()
+        public void Handle_CreateOrderCommandNullCustumer_Invalid()
         {
             var command = GetCommand();
             command.CustomerId = Guid.Parse("20e24fb3-8bcd-4f48-b457-a64562b58d74");
 
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
-            var ex = Assert.Throws<ArgumentException>(() => appService.Handle(command));
-            Assert.Equal("Product not found. (Parameter 'customer')", ex.Message);
+            var result = appService.Handle(command);
+
+            Assert.False(result.Success);
+            Assert.Equal("Product not found.", result.Notifications.First().Message);
         }
 
         [Theory]
@@ -91,20 +93,16 @@ namespace RefactoringDemo.Test
             Assert.Equal("Product not found. (Parameter 'product')", ex.Message);
         }
 
-        [Theory]
-        [InlineData(0)]
-        [InlineData(-1)]
-        public void Handle_CreateOrderCommandDiscountInvalid_ThrowsArgumentException(decimal discount)
+        [Fact]
+        public void Handle_CreateOrderCommandDiscountInvalid_Invalid()
         {
-            var command = GetCommand();
-            command.Discount = discount;
-
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
+            var result = (CreateOrderCommandResult)appService.Handle(GetCommand(-1));
 
-            var ex = Assert.Throws<ArgumentException>(() => appService.Handle(command));
-            Assert.Equal("Discount should be positive. (Parameter 'Discount')", ex.Message);
+            Assert.False(result.Success);
+            Assert.Equal("Discount, when applied, should be positive.", result.Notifications.First().Message);
         }
-        
+
         [Fact]
         public void FirstPurchase_Discount10Percent_Total126()
         {
@@ -135,10 +133,8 @@ namespace RefactoringDemo.Test
             Assert.Equal(10, result.Discount);
         }
 
-
-
         private static CreateOrderCommand GetCommand(
-            decimal? discount = null,
+            decimal discount = 0,
             string customerId = "418be026-b301-4696-b062-08d70cfeca04")
         {
             return new CreateOrderCommand
@@ -165,42 +161,26 @@ namespace RefactoringDemo.Test
         private void InitializeFake()
         {
             _customerRepository = Substitute.For<ICustomerRepository>();
-            _customerRepository.Get(Guid.Parse("418be026-b301-4696-b062-08d70cfeca04")).Returns(new Customer
-            {
-                Name = "Maicon Heck",
-                BirthDate = new DateTime(1985, 12, 9),
-                Email = "contato@maiconheck.com",
-                Nif = "537234789"
-            });
-            _customerRepository.Get(Guid.Parse("1a59d5bf-9233-44dc-9816-3cc93372da61")).Returns(new Customer
-            {
-                Name = "Maicon Heck",
-                BirthDate = DateTime.Today,
-                Email = "contato@maiconheck.com",
-                Nif = "537234789",
-                LastPurchaseDate = DateTime.Today
-            });
-            _customerRepository.Get(Guid.Parse("25eef3d0-53c6-47e0-9c2b-76d67bbd0151")).Returns(new Customer
-            {
-                Name = "Maicon Heck",
-                BirthDate = new DateTime(1985, 12, 9),
-                Email = "contato@maiconheck.com",
-                Nif = "537234789",
-                LastPurchaseDate = DateTime.Today.AddDays(-50)
-            });
+            _customerRepository.Get(Guid.Parse("418be026-b301-4696-b062-08d70cfeca04"))
+                .Returns(new Customer("Maicon Heck", new DateTime(1985, 12, 9), "contato@maiconheck.com", "537234789"));
+
+            var customer = new Customer("Maicon Heck", DateTime.Today, "contato@maiconheck.com", "537234789");
+            customer.UpdateLastPurchaseDate(DateTime.Today);
+            _customerRepository.Get(Guid.Parse("1a59d5bf-9233-44dc-9816-3cc93372da61"))
+                .Returns(customer);
+
+            var customer1 = new Customer("Maicon Heck", new DateTime(1985, 12, 9), "contato@maiconheck.com", "537234789");
+            customer1.UpdateLastPurchaseDate(DateTime.Today.AddDays(-50));
+            _customerRepository.Get(Guid.Parse("25eef3d0-53c6-47e0-9c2b-76d67bbd0151"))
+                .Returns(customer1);
 
             _productRepository = Substitute.For<IProductRepository>();
 
-            _productRepository.Get(Guid.Parse("608f1b52-07ed-42ec-a1a3-55c4e73a8755")).Returns(new Product
-            {
-                Name = "T-Shirt",
-                Price = 20m,
-            });
-            _productRepository.Get(Guid.Parse("36d8130d-608f-45ff-a177-8137ca8bc7b6")).Returns(new Product
-            {
-                Name = "Pants",
-                Price = 10m,
-            });
+            _productRepository.Get(Guid.Parse("608f1b52-07ed-42ec-a1a3-55c4e73a8755"))
+                .Returns(new Product("T-Shirt", 20m));
+
+            _productRepository.Get(Guid.Parse("36d8130d-608f-45ff-a177-8137ca8bc7b6"))
+                .Returns(new Product("Pants", 10m));
 
             _orderRepository = Substitute.For<IOrderRepository>();
         }

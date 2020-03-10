@@ -59,26 +59,13 @@ namespace RefactoringDemo
         private static void InitializeFake()
         {
             _customerRepository = Substitute.For<ICustomerRepository>();
-            _customerRepository.Get(Arg.Any<Guid>()).Returns(new Customer
-            {
-                Name = "Maicon Heck",
-                BirthDate = new DateTime(1985, 12, 9),
-                Email = "contato@maiconheck.com",
-                Nif = "537234789"
-            });
+            _customerRepository.Get(Arg.Any<Guid>())
+                .Returns(new Customer("Maicon Heck", new DateTime(1985, 12, 9), "contato@maiconheck.com", "537234789"));
 
             _productRepository = Substitute.For<IProductRepository>();
 
-            _productRepository.Get(Guid.Parse("608f1b52-07ed-42ec-a1a3-55c4e73a8755")).Returns(new Product
-            {
-                Name = "T-Shirt",
-                Price = 20m,
-            });
-            _productRepository.Get(Guid.Parse("36d8130d-608f-45ff-a177-8137ca8bc7b6")).Returns(new Product
-            {
-                Name = "Pants",
-                Price = 10m,
-            });
+            _productRepository.Get(Guid.Parse("608f1b52-07ed-42ec-a1a3-55c4e73a8755")).Returns(new Product("T-Shirt", 20m));
+            _productRepository.Get(Guid.Parse("36d8130d-608f-45ff-a177-8137ca8bc7b6")).Returns(new Product("Pants", 10m));
 
             _orderRepository = Substitute.For<IOrderRepository>();
         }

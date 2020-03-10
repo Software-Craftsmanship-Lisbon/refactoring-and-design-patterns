@@ -1,23 +1,26 @@
-﻿using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
+﻿using Flunt.Validations;
+using RefactoringDemo.Domain.SharedKernel;
 
 namespace RefactoringDemo.Domain.ECommerce.Orders
 {
-    public class OrderItem
+    public class OrderItem : Entity
     {
-        public int Id { get; set; }
+        public OrderItem(Product product, int quantity)
+        {
+            Product = product;
+            Quantity = quantity;
 
-        public Product Product { get; set; }
+            AddNotifications(new Contract()
+                .Requires()
+                .IsGreaterThan(Quantity, 0, nameof(Quantity), "Quantity should be greater than 0."));
+        }
 
-        public int Quantity { get; set; }
+        public Product Product { get; }
+
+        public int Quantity { get; }
 
         public decimal Price => Product.Price;
 
-        public decimal Total()
-        {
-            return Price * Quantity;
-        }
+        public decimal Total() => Price * Quantity;
     }
 }

@@ -10,7 +10,7 @@ namespace RefactoringDemo.Application.ECommerce.Orders
 
         public decimal DF { get; set; }
 
-        public decimal? Discount { get; set; }
+        public decimal Discount { get; set; }
 
         public IEnumerable<CreateOrderItemCommand> Items { get; set; }
     }

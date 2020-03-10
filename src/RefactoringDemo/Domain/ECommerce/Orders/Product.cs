@@ -1,16 +1,17 @@
-﻿using System;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
+﻿using RefactoringDemo.Domain.SharedKernel;
 
 namespace RefactoringDemo.Domain.ECommerce.Orders
 {
-    public class Product
+    public class Product : Entity
     {
-        public int Id { get; set; }
+        public Product(string name, decimal price)
+        {
+            Name = name;
+            Price = price;
+        }
 
-        public string Name { get; set; }
+        public string Name { get; }
 
-        public decimal Price { get; set; }
+        public decimal Price { get; }
     }
 }

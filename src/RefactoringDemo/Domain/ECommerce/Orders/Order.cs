@@ -1,59 +1,56 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
+using Flunt.Validations;
+using RefactoringDemo.Domain.SharedKernel;
 
 namespace RefactoringDemo.Domain.ECommerce.Orders
 {
-    public class Order
+    public class Order : Entity
     {
-        public Order()
+        private readonly IList<OrderItem> _items;
+
+        public Order(Customer customer, decimal deliveryFee, decimal discount)
         {
+            _items = new List<OrderItem>();
+
+            Customer = customer;
+            DeliveryFee = deliveryFee;
+            Discount = discount;
             CreatedDateTime = DateTime.Now;
             Number = Guid.NewGuid().ToString().Substring(0, 10).ToUpper();
             Status = Status.Created;
-        }
-        
-        public int Id { get; set; }
 
-        public Customer Customer { get; set; }
-
-        public DateTime CreatedDateTime { get; set; }
-
-        public string Number { get; set; }
-
-        public Status Status { get; set; }
-
-        public decimal DeliveryFee { get; set; }
-
-        public decimal? Discount { get; set; }
-
-        public List<OrderItem> Items { get; set; }
-
-        public decimal SubTotal()
-        {
-            try
-            {
-                return Items.Sum(x => x.Total());
-            }
-            catch (Exception)
-            {
-                Items = new List<OrderItem>();
-                return 0m;
-            }
+            AddNotifications(new Contract()
+                    .Requires()
+                    .IsGreaterThan(DeliveryFee, 0, nameof(DeliveryFee), "Delivery fee must should be positive.")
+                    .IsGreaterOrEqualsThan(Discount, 0, nameof(Discount), "Discount, when applied, should be positive."));
         }
 
-        public decimal Total()
+        public Customer Customer { get; }
+
+        public DateTime CreatedDateTime { get; }
+
+        public string Number { get; }
+
+        public Status Status { get; }
+
+        public decimal DeliveryFee { get; }
+
+        public decimal Discount { get; private set; }
+
+        public decimal SubTotal() => _items.Sum(x => x.Total());
+
+        public decimal Total() => SubTotal() + DeliveryFee - Discount;
+
+        public void UpdateDiscount(decimal discount) => Discount = discount;
+
+        public void AddItem(OrderItem item)
         {
-            try
-            {
-                return SubTotal() + DeliveryFee - Discount.Value;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("An error has occurred, contact your system administrator!");
-            }
+            AddNotifications(item.Notifications);
+
+            if (item.Valid)
+                _items.Add(item);
         }
     }
 }

@@ -29,12 +29,12 @@ namespace RefactoringDemo.Test
         [Fact]
         public void Handle_CreateOrderCommandValid_OrderCreated()
         {
-            var command = GetCommand();
+            var command = GetCommand(discount: 25);
 
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
             var result = (CreateOrderCommandResult)appService.Handle(command);
 
-            Assert.Equal(new DateTime(2020, 3, 9), result.CreatedDateTime, TimeSpan.FromDays(1));
+            Assert.Equal(DateTime.Today, result.CreatedDateTime, TimeSpan.FromDays(1));
             Assert.Equal(140m, result.SubTotal);
             Assert.Equal(4m, result.DeliveryFee);
             Assert.Equal(25m, result.Discount);
@@ -91,27 +91,24 @@ namespace RefactoringDemo.Test
             Assert.Equal("Product not found. (Parameter 'product')", ex.Message);
         }
 
-        [Fact]
-        public void Handle_CreateOrderCommandDiscountInvalid_ThrowsArgumentException()
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public void Handle_CreateOrderCommandDiscountInvalid_ThrowsArgumentException(decimal discount)
         {
             var command = GetCommand();
-            command.Discount = null;
+            command.Discount = discount;
 
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
 
             var ex = Assert.Throws<ArgumentException>(() => appService.Handle(command));
             Assert.Equal("Discount should be positive. (Parameter 'Discount')", ex.Message);
         }
-
-
-
-
-
         
         [Fact]
         public void FirstPurchase_Discount10Percent_Total126()
         {
-            var command = GetCommand(discount: 0);
+            var command = GetCommand();
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
             var result = (CreateOrderCommandResult)appService.Handle(command);
 
@@ -121,7 +118,7 @@ namespace RefactoringDemo.Test
         [Fact]
         public void LastPurchase40DaysAgo_Discount5Percent_Total137()
         {
-            var command = GetCommand(discount: 0, customerId: "25eef3d0-53c6-47e0-9c2b-76d67bbd0151");
+            var command = GetCommand(customerId: "25eef3d0-53c6-47e0-9c2b-76d67bbd0151");
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
             var result = (CreateOrderCommandResult)appService.Handle(command);
 
@@ -131,7 +128,7 @@ namespace RefactoringDemo.Test
         [Fact]
         public void PurchaseOnBirthday_SubTotalOver50_Discount10()
         {
-            var command = GetCommand(discount: 0, customerId: "1a59d5bf-9233-44dc-9816-3cc93372da61");
+            var command = GetCommand(customerId: "1a59d5bf-9233-44dc-9816-3cc93372da61");
             var appService = new OrderApplicationService(_customerRepository, _productRepository, _orderRepository);
             var result = (CreateOrderCommandResult)appService.Handle(command);
 
@@ -141,7 +138,7 @@ namespace RefactoringDemo.Test
 
 
         private static CreateOrderCommand GetCommand(
-            decimal discount = 10,
+            decimal? discount = null,
             string customerId = "418be026-b301-4696-b062-08d70cfeca04")
         {
             return new CreateOrderCommand

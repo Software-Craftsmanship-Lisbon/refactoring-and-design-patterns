@@ -48,11 +48,6 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
         {
             try
             {
-                if (!Discount.HasValue)
-                {
-                    Discount = 0;
-                }
-
                 return SubTotal() + DeliveryFee - Discount.Value;
             }
             catch (Exception ex)

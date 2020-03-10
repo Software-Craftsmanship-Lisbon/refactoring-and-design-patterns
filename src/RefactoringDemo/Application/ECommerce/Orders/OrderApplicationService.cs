@@ -37,6 +37,13 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 throw new ArgumentException("DF should be applied.", nameof(command.DF));
             }
 
+            if (command.Discount.HasValue)
+            {
+                if (command.Discount <= 0)
+                {
+                    throw new ArgumentException("Discount should be positive.", nameof(command.Discount));
+                }
+            }
 
             // Create the order.
             var order = new Order
@@ -70,67 +77,62 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 order.Items.Add(new OrderItem { Product = product, Quantity = item.Quantity });
             }
 
-            bool da = false; // discount applied
-
-            #region Disc
-
-            // First purchase
-            if (!customer.LastPurchaseDate.HasValue)
+            if (!command.Discount.HasValue)
             {
-                decimal _10percOfST = (10m / 100m) * order.SubTotal();
-                order.Discount = _10percOfST;
-                da = true;
-            }
-            // Last purchase 40 days ago
-            else
-            {
-                if ((DateTime.Today - customer.LastPurchaseDate.Value).TotalDays > 40)
+                bool da = false; // discount applied
+
+                #region Disc
+
+                // First purchase
+                if (!customer.LastPurchaseDate.HasValue)
                 {
-                    decimal _5percOfST = (5m / 100m) * order.SubTotal();
-                    order.Discount = _5percOfST;
+                    decimal _10percOfST = (10m / 100m) * order.SubTotal();
+                    order.Discount = _10percOfST;
                     da = true;
                 }
-            }
-
-            #endregion
-
-
-            // ---------- Calculates discounts --------------
-
-            if (!da) // discount applied
-            {
-                //Birthday - Purchases over 50 €
-                if (DateTime.Today.Day == customer.BirthDate.Day)
+                // Last purchase 40 days ago
+                else
                 {
-                    if (DateTime.Today.Month == customer.BirthDate.Month)
+                    if ((DateTime.Today - customer.LastPurchaseDate.Value).TotalDays > 40)
                     {
-                        if (order.SubTotal() > 50m)
+                        decimal _5percOfST = (5m / 100m) * order.SubTotal();
+                        order.Discount = _5percOfST;
+                        da = true;
+                    }
+                }
+
+                #endregion
+
+
+                // ---------- Calculates discounts --------------
+
+                if (!da)
+                {
+                    //Birthday - Purchases over 50 €
+                    if (DateTime.Today.Day == customer.BirthDate.Day)
+                    {
+                        if (DateTime.Today.Month == customer.BirthDate.Month)
                         {
-                            order.Discount = 10m;
+                            if (order.SubTotal() > 50m)
+                            {
+                                order.Discount = 10m;
+                            }
                         }
                     }
                 } 
             }
 
             // Persist the order.
-            if (command.Discount.HasValue)
+            if (command.DF > 0)
             {
-                if (command.Discount > 0)
-                {
-                    if (command.DF > 0)
-                    {
-                        _orderRepository.Save(order);
+                _orderRepository.Save(order);
                         
-                        DateTime? lastPD = customer.LastPurchaseDate;
-                        customer.LastPurchaseDate = DateTime.Today;
-                        _customerRepository.Save(customer);
-                    }
-                }
+                DateTime? lastPD = customer.LastPurchaseDate;
+                customer.LastPurchaseDate = DateTime.Today;
+                _customerRepository.Save(customer);
             }
-            else
-            {
-                throw new ArgumentException("Discount should be positive.", nameof(command.Discount));
-            }
+            
+            
 
             return new CreateOrderCommandResult
             {

@@ -1,7 +1,10 @@
 ﻿using Flunt.Notifications;
 using RefactoringDemo.Application.Common;
 using RefactoringDemo.Domain.ECommerce.Orders;
+using RefactoringDemo.Domain.ECommerce.Orders.Discounts;
+using RefactoringDemo.Domain.ECommerce.Orders.Discounts.Strategies;
 using System;
+using System.Collections.Generic;
 
 namespace RefactoringDemo.Application.ECommerce.Orders
 {
@@ -49,20 +52,18 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 order.AddItem(new OrderItem(product, item.Quantity));
             }
 
+            // ManualDiscount
             if (command.Discount == 0)
             {
-                if (!customer.FirstPurchase)
+                var strategies = new List<DiscountStrategy>
                 {
-                    order.ApplyPercentDiscount(10m);
-                }
-                else if (customer.LastPurchaseInDaysAgo(40))
-                {
-                    order.ApplyPercentDiscount(5m);
-                }
-                else if (customer.IsBirthDate && order.SubTotal() > 50m)
-                {
-                    order.ApplyFixedDiscount(10m);
-                }
+                    //new FirstPurchaseStrategy(percentDiscount: 10m),
+                    new LastPurchaseInDaysAgoStrategy(percentDiscount: 5m, daysAgo: 40),
+                    //new BirthDateStrategy(fixedDiscount: 10m, purchaseOverSubTotal: 50m)
+                };
+
+                var context = new DiscountContext(strategies);
+                context.Calculate(order, customer);
             }
 
             // Add order notifications in AppService

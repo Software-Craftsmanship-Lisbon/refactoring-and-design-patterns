@@ -10,13 +10,12 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
     {
         private readonly IList<OrderItem> _items;
 
-        public Order(Customer customer, decimal deliveryFee, decimal discount)
+        public Order(Customer customer, decimal deliveryFee)
         {
             _items = new List<OrderItem>();
 
             Customer = customer;
             DeliveryFee = deliveryFee;
-            Discount = discount;
             CreatedDateTime = DateTime.Now;
             Number = Guid.NewGuid().ToString().Substring(0, 10).ToUpper();
             Status = Status.Created;
@@ -43,10 +42,15 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
 
         public decimal Total() => SubTotal() + DeliveryFee - Discount;
 
-        public void ApplyFixedDiscount(decimal discount) => Discount = discount;
+        public void ApplyFixedDiscount(decimal discount)
+        {
+            Discount = discount;
+            ValidateDiscount();
+        }
 
         public void ApplyPercentDiscount(decimal percent)
         {
+            ValidateDiscount();
             decimal amount = (percent / 100m) * SubTotal();
             ApplyFixedDiscount(amount);
         }
@@ -57,6 +61,13 @@ namespace RefactoringDemo.Domain.ECommerce.Orders
 
             if (item.Valid)
                 _items.Add(item);
+        }
+
+        private void ValidateDiscount()
+        {
+            AddNotifications(new Contract()
+                    .Requires()
+                    .IsGreaterOrEqualsThan(Discount, 0, nameof(Discount), "Discount, when applied, should be positive."));
         }
     }
 }

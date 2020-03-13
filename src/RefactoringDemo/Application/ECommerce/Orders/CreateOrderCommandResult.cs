@@ -1,5 +1,6 @@
 ﻿using Flunt.Notifications;
 using RefactoringDemo.Application.Common;
+using RefactoringDemo.Domain.ECommerce.Orders;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,22 +26,15 @@ namespace RefactoringDemo.Application.ECommerce.Orders
         {
         }
 
-        public CreateOrderCommandResult(
-            IReadOnlyCollection<Notification> notifications,
-            string number,
-            DateTime createdDateTime,
-            decimal deliveryFee,
-            decimal discount,
-            decimal subTotal,
-            decimal total)
+        public CreateOrderCommandResult(IReadOnlyCollection<Notification> notifications, Order order)
             : base(notifications)
         {
-            Number = number;
-            CreatedDateTime = createdDateTime;
-            DeliveryFee = deliveryFee;
-            Discount = discount;
-            SubTotal = subTotal;
-            Total = total;
+            Number = order.Number;
+            CreatedDateTime = order.CreatedDateTime;
+            DeliveryFee = order.DeliveryFee;
+            Discount = order.Discount;
+            SubTotal = order.SubTotal();
+            Total = order.Total();
         }
 
         public string Number { get; set; }

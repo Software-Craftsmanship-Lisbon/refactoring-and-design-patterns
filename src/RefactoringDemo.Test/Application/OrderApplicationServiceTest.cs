@@ -19,8 +19,8 @@ namespace RefactoringDemo.Test.Application
             Assert.Equal(DateTime.Today, result.CreatedDateTime, TimeSpan.FromDays(1));
             Assert.Equal(140m, result.SubTotal);
             Assert.Equal(4m, result.DeliveryFee);
-            Assert.Equal(25m, result.Discount);
-            Assert.Equal(119m, result.Total);
+            Assert.Equal(14m, result.Discount);
+            Assert.Equal(130m, result.Total);
         }
 
         [Fact]

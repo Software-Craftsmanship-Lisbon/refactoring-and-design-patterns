@@ -1,10 +1,10 @@
-﻿using Flunt.Notifications;
+﻿using System;
+using System.Collections.Generic;
+using Flunt.Notifications;
 using RefactoringDemo.Application.Common;
 using RefactoringDemo.Domain.ECommerce.Orders;
 using RefactoringDemo.Domain.ECommerce.Orders.Discounts;
 using RefactoringDemo.Domain.ECommerce.Orders.Discounts.Strategies;
-using System;
-using System.Collections.Generic;
 
 namespace RefactoringDemo.Application.ECommerce.Orders
 {
@@ -29,21 +29,21 @@ namespace RefactoringDemo.Application.ECommerce.Orders
         {
             // Get the customer from DB.
             var customer = _customerRepository.Get(command.CustomerId);
-            if (customer == null)
+            if (customer is null)
             {
                 AddNotification(nameof(customer), "Customer not found.");
                 return new CreateOrderCommandResult(Notifications);
             }
 
             // Create the order.
-            var order = new Order(customer, command.DeliveryFee, command.Discount);
+            var order = new Order(customer, command.DeliveryFee);
 
-            // Add the itens into the order.
+            // Add the items into the order.
             foreach (var item in command.Items)
             {
                 // Get the product from DB.
                 var product = _productRepository.Get(item.ProductId);
-                if (product == null)
+                if (product is null)
                 {
                     AddNotification(nameof(product), "Product not found.");
                     return new CreateOrderCommandResult(Notifications);
@@ -52,19 +52,17 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 order.AddItem(new OrderItem(product, item.Quantity));
             }
 
-            // ManualDiscount
-            if (command.Discount == 0)
+            // Apply discount calculations.
+            var strategies = new List<DiscountStrategy>
             {
-                var strategies = new List<DiscountStrategy>
-                {
-                    new FirstPurchaseStrategy(percentDiscount: 10m),
-                    new LastPurchaseInDaysAgoStrategy(percentDiscount: 5m, daysAgo: 40),
-                    new BirthDateStrategy(fixedDiscount: 10m, purchaseOverSubTotal: 50m)
-                };
+                new ManualStrategy(command.Discount),
+                new FirstPurchaseStrategy(percentDiscount: 10m),
+                new LastPurchaseInDaysAgoStrategy(percentDiscount: 5m, daysAgo: 40),
+                new BirthDateStrategy(fixedDiscount: 10m, purchaseOverSubTotal: 50m)
+            };
 
-                var context = new DiscountContext(strategies);
-                context.Calculate(order, customer);
-            }
+            var context = new DiscountContext(strategies);
+            context.Calculate(order, customer);
 
             // Add order notifications in AppService
             AddNotifications(order.Notifications);
@@ -80,15 +78,7 @@ namespace RefactoringDemo.Application.ECommerce.Orders
                 _customerRepository.Save(customer);
             }
 
-            return new CreateOrderCommandResult(
-                Notifications,
-                order.Number,
-                order.CreatedDateTime,
-                order.DeliveryFee,
-                order.Discount,
-                order.SubTotal(),
-                order.Total()
-            );
+            return new CreateOrderCommandResult(Notifications, order);
         }
     }
 }
